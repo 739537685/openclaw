@@ -367,6 +367,15 @@ const UpdateRecordSchema = Type.Object({
   fields: CreateRecordSchema.properties.fields,
 });
 
+const BatchDeleteRecordsSchema = Type.Object({
+  ...ListFieldsSchema.properties,
+  record_ids: Type.Array(Type.String({ description: "Record ID to delete" }), {
+    description: "Record IDs to delete (1-500 per call; split larger batches)",
+    minItems: 1,
+    maxItems: 500,
+  }),
+});
+
 export function registerFeishuBitableTools(api: OpenClawPluginApi) {
   const registerBitableTool = <TSchemaType extends TSchema>(tool: {
     name: string;
@@ -515,6 +524,29 @@ export function registerFeishuBitableTools(api: OpenClawPluginApi) {
 
       return {
         record: res.data?.record,
+      };
+    },
+  });
+
+  registerBitableTool({
+    name: "feishu_bitable_batch_delete_records",
+    label: "Feishu Bitable Batch Delete Records",
+    description:
+      "Delete one or more records (rows) from a Bitable table by record_id (max 500 per call)",
+    parameters: BatchDeleteRecordsSchema,
+    async execute({ params, client }) {
+      const { app_token, table_id, record_ids } = params;
+      const ids = record_ids.filter(Boolean);
+      if (ids.length === 0) return { deleted: 0, record_ids: [] };
+      const res = await client.bitable.appTableRecord.batchDelete({
+        path: { app_token, table_id },
+        data: { records: ids },
+      });
+      ensureLarkSuccess(res, "bitable.appTableRecord.batchDelete");
+
+      return {
+        deleted: ids.length,
+        record_ids: ids,
       };
     },
   });

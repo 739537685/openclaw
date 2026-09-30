@@ -13,6 +13,7 @@
   "contracts": {
     "tools": [
       "feishu_app_scopes",
+      "feishu_bitable_batch_delete_records",
       "feishu_bitable_create_app",
       "feishu_bitable_create_field",
       "feishu_bitable_create_record",
